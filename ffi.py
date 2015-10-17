@@ -2,35 +2,62 @@ from ctypes import cdll
 
 mylib = cdll.LoadLibrary("osvrClientKit")
 
+def OSVR_ClientContext(Structure):
+    pass
+def OSVR_ReturnCode(Structure):
+    pass
+def OSVR_ClientInterface(Structure):
+    pass
+def OSVR_DisplayConfigObject(Structure):
+    pass
+
 def osvrClientInit(applicationIdentifier, flags):
-	rval = mylib.osvrClientInit()
+	mylib.osvrClientInit.argtypes = [c_char_p, c_uint32]
+    mylib.osvrClientInit.restype = OSVR_ClientContext
+    rval = mylib.osvrClientInit(c_char_p(applicationIdentifier), c_uint32(flags))
 	return rval
 
 def osvrClientUpdate(ctx):
-	rval = mylib.osvrClientUpdate(ctx)
+    mylib.osvrClientUpdate.argtypes = [OSVR_ClientContext]
+	mylib.osvrClientUpdate.restype = OSVR_ReturnCode
+    rval = mylib.osvrClientUpdate(ctx)
 	return rval
 
 def osvrClientCheckStatus(ctx):
+    mylib.osvrClientCheckStatus.argtypes = [OSVR_ClientContext]
+    mylib.osvrClientCheckStatus.restype = OSVR_ReturnCode
 	rval = mylib.osvrClientCheckStatus(ctx)
 	return rval
 
 def osvrClientShutdown(ctx):
+    mylib.osvrClientShutdown.argtypes = [OSVR_ClientContext]
+    mylib.osvrClientShutdown.restype = OSVR_ReturnCode
 	rval = mylib.osvrClientShutdown(ctx)
 	return rval
 
 def osvrClientGetInterface(ctx, path, iface):
-	return mylib.osvrClientGetInterface(ctx, path, iface)
+    mylib.osvrClientGetInterface.argtypes = [OSVR_ClientContext, c_char_p, pointer(OSVR_ClientInterface)]
+    mylib.osvrClientGetInterace.restype = OSVR_ReturnCode
+	return mylib.osvrClientGetInterface(ctx, c_char_p(path), iface)
 	
 def osvrClientFreeInterface(ctx, iface):
+    mylib.osvrClientFreeInterface.argtypes = [OSVR_ClientContext, OSVR_ClientInterface]
+    mylib.osvrClientFreeInterface.restype = OSVR_ReturnCode
 	return mylib.osvrClientFreeInterface(ctx, iface)
 
 def osvrClientGetStringParameterLength(ctx, path, len):
-	return mylib.osvrGetStringParameterLength(ctx, path, len)
+    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, c_size_t]
+    mylib.osvrClientGetStringParameterLength.restype = OSVR_ReturnCode
+	return mylib.osvrGetStringParameterLength(ctx, c_char_p(path), c_size_t(len)
 	
 def osvrClientGetStringParameter(ctx, path, buf, len):
-	return mylib.osvrClientGetStringParameter(ctx, path, buf, len);
+    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, c_char_p c_size_t]
+    mylib.osvrClientGetStringParameterLength.restype = OSVR_ReturnCode
+	return mylib.osvrClientGetStringParameter(ctx, c_char_p(path), c_char_p(buf), c_size_t(len);
 
 def osvrClientGetDisplay(ctx, disp)
+    mylib.osvrClientGetDisplay.argtypes = [OSVR_ClientContext, pointer(OSVR_DisplayConfig)]
+    mylib.osvrClientGetDisplay.restype = OSVR_ReturnCode
     return mylib.osvrClientGetDisplay(ctx, disp)
 
 def osvrClientFreeDisplay(disp)
