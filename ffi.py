@@ -1,4 +1,4 @@
-from ctypes import cdll
+from ctypes import *
 
 mylib = cdll.LoadLibrary("osvrClientKit")
 
@@ -22,8 +22,9 @@ def OSVR_SurfaceCount(Structure):
     pass
 def OSVR_RadialDistortionParameters(Structure):
     pass
-
 #does CBool need to be redefined?
+
+# ContextC.h functions
 
 def osvrClientInit(applicationIdentifier, flags):
     mylib.osvrClientInit.argtypes = [c_char_p, c_uint32]
@@ -45,25 +46,7 @@ def osvrClientShutdown(ctx):
     mylib.osvrClientShutdown.restype = OSVR_ReturnCode
     return mylib.osvrClientShutdown(ctx)
 
-def osvrClientGetInterface(ctx, path, iface):
-    mylib.osvrClientGetInterface.argtypes = [OSVR_ClientContext, c_char_p, pointer(OSVR_ClientInterface)]
-    mylib.osvrClientGetInterace.restype = OSVR_ReturnCode
-    return mylib.osvrClientGetInterface(ctx, c_char_p(path), iface)
-	
-def osvrClientFreeInterface(ctx, iface):
-    mylib.osvrClientFreeInterface.argtypes = [OSVR_ClientContext, OSVR_ClientInterface]
-    mylib.osvrClientFreeInterface.restype = OSVR_ReturnCode
-    return mylib.osvrClientFreeInterface(ctx, iface)
-
-def osvrClientGetStringParameterLength(ctx, path, len):
-    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, c_size_t]
-    mylib.osvrClientGetStringParameterLength.restype = OSVR_ReturnCode
-    return mylib.osvrGetStringParameterLength(ctx, c_char_p(path), c_size_t(len)
-	
-def osvrClientGetStringParameter(ctx, path, buf, len):
-    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, c_char_p c_size_t]
-    mylib.osvrClientGetStringParameterLength.restype = OSVR_ReturnCode
-    return mylib.osvrClientGetStringParameter(ctx, c_char_p(path), c_char_p(buf), c_size_t(len);
+# DisplayC.h functions
 
 def osvrClientGetDisplay(ctx, disp):
     mylib.osvrClientGetDisplay.argtypes = [OSVR_ClientContext, pointer(OSVR_DisplayConfig)]
@@ -164,3 +147,34 @@ def osvrClientGetViewerEyeSurfaceRadialDistortion(disp, viewer, eye, surface, pa
     mylib.osvrClientGetViewerEyeSurfaceRadialDistortion.argtypes = [OSVR_DisplayConfig, OSVR_ViewerCount, OSVR_EyeCount, OSVR_SurfaceCount, pointer(OSVR_RadialDistortionParameters)]
     mylib.osvrClientGetViewerEyeSurfaceRadialDistortion.restype = OSVR_ReturnCode
     return mylib.osvrClientGetViewerEyeSurfaceRadialDistortion(disp, viewer, eye, surface, pointer(params))
+
+# ImagingC.h functions
+
+def osvrClientFreeImage(ctx, buf):
+    mylib.osvrClientFreeImage.argtypes = [OSVR_ClientContext, pointer(OSVR_ImageBufferElement)]
+    mylib.osvrClientFreeImage.restype = OSVR_ReturnCode
+    return mylib.osvrClientFreeImage(ctx, pointer(buf))
+
+# InterfaceC.h functions
+
+def osvrClientGetInterface(ctx, path, iface):
+    mylib.osvrClientGetInterface.argtypes = [OSVR_ClientContext, c_char_p, pointer(OSVR_ClientInterface)]
+    mylib.osvrClientGetInterace.restype = OSVR_ReturnCode
+    return mylib.osvrClientGetInterface(ctx, c_char_p(path), iface)
+
+def osvrClientFreeInterface(ctx, iface):
+    mylib.osvrClientFreeInterface.argtypes = [OSVR_ClientContext, OSVR_ClientInterface]
+    mylib.osvrClientFreeInterface.restype = OSVR_ReturnCode
+    return mylib.osvrClientFreeInterface(ctx, iface)
+
+# ParametersC.h functions
+
+def osvrClientGetStringParameterLength(ctx, path, len):
+    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, c_size_t]
+    mylib.osvrClientGetStringParameterLength.restype = OSVR_ReturnCode
+    return mylib.osvrGetStringParameterLength(ctx, c_char_p(path), c_size_t(len))
+
+def osvrClientGetStringParameter(ctx, path, buf, len):
+    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, c_char_p, c_size_t]
+    mylib.osvrClientGetStringParameterLength.restype = OSVR_ReturnCode
+    return mylib.osvrClientGetStringParameter(ctx, c_char_p(path), c_char_p(buf), c_size_t(len))
