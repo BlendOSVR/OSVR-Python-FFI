@@ -1,11 +1,9 @@
 from ctypes import *
 from ffi import *
 
-ctx = osvrClientInit(c_char_p("com.osvr.exampleclients.TrackerCallback".encode("utf8")), c_uint32(0))
+ctx = osvrClientInit("com.osvr.exampleclients.TrackerCallback")
 
-lefthand = pointer(OSVR_ClientInterfaceObject())
-
-osvrClientGetInterface(ctx, c_char_p("/me/hands/left".encode("utf8")), pointer(lefthand))
+lefthand = osvrClientGetInterface(ctx, "/me/hands/left")
 
 osvrClientUpdate(ctx)
 
