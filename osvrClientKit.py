@@ -17,6 +17,8 @@ class OSVR_DisplayConfigObject(Structure):
 
 OSVR_DisplayConfig = POINTER(OSVR_DisplayConfigObject)
 
+#may need to define __init__() for some classes, not sure
+
 class OSVR_Vec2(Structure):
     _fields_ = [("data", c_double * 2)]
 
@@ -35,8 +37,64 @@ class OSVR_RadialDistortionParameters(Structure):
 class OSVR_TimeValue(Structure):
     _fields_ = [("seconds", c_int64),("microseconds", c_int32)]
 
+class OSVR_DisplayDimensions(Structure):
+    _fields_ = [("width", c_int32), ("height", c_int32)]
+
+class OSVR_RelativeViewport(Structure):
+    _fields_ = [("left", c_int32), ("bottom", c_int32), ("width", c_int32), ("height", c_int32)]
+
+class OSVR_ClippingPlanes(Structure):
+    _fields_ = [("left", c_double), ("right", c_double), ("bottom", c_double), ("top", c_double)]
+
+# InterfaceCallbackC.h data types
+
+class OSVR_PositionReport(Structure):
+    
+
+OSVR_PoseCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_PositionReport))
+
+# InterfaceStateC.h data types
+
 class OSVR_EyeTracker3DState(Structure):
     _fields_ = [("direction", OSVR_Vec3), ("basePoint", OSVR_Vec3)]
+
+class OSVR_TimestampedPoseState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Pose3)]
+
+class OSVR_TimestampedPositionState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Vec3)]
+
+class OSVR_TimestampedOrientationState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Quaternion)]
+
+class OSVR_TimestampedButtonState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", c_uint8)]
+
+class OSVR_TimestampedAnalogState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", c_double)]
+
+class OSVR_TimestampedLocation2DState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Vec2)]
+
+class OSVR_TimestampedDirectionState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Vec3)]
+
+class OSVR_TimestampedEyeTracker2DState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Vec2)]
+
+class OSVR_TimestampedEyeTracker3DState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_EyeTracker3DState)]
+
+class OSVR_TimestampedEyeTrackerBlinkState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", c_uint8)]
+
+class OSVR_TimestampedNaviVelocityState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Vec2)]
+
+class OSVR_TimestampedNaviPositionState(Structure):
+    _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Vec2)]
+
+
 
 # Error checking
 
@@ -63,6 +121,7 @@ def osvrClientUpdate(ctx):
     mylib.osvrClientUpdate.restype = c_int8
     returnvalue = mylib.osvrClientUpdate(ctx)
     checkReturn(returnvalue, 'osvrClientUpdate')
+    #maybe don't need to return the code, if throwing an exception would be enough
     return
 
 def osvrClientCheckStatus(ctx):
@@ -101,6 +160,7 @@ def osvrClientCheckDisplayStartup(disp):
     mylib.osvrClientCheckDisplayStartup.restype = c_int8
     returnvalue = mylib.osvrClientCheckDisplayStartup(disp)
     checkReturn(returnvalue, 'osvrClientCheckDisplayStartup')
+    #maybe don't need to return the code, if throwing an exception would be enough
     return returnvalue
 
 def osvrClientGetNumDisplayInputs(disp):
@@ -111,124 +171,137 @@ def osvrClientGetNumDisplayInputs(disp):
     checkReturn(returnvalue, 'osvrClientGetNumDisplayInputs')
     return numDisplayInputs
 
-#Need to continue changing return types from here down
-
-def osvrClientGetDisplayDimensions(disp, displayInputIndex, width, height):
+def osvrClientGetDisplayDimensions(disp, displayInputIndex):
     mylib.osvrClientGetDisplayDimensions.argtypes = [OSVR_DisplayConfig, c_uint8, POINTER(c_int32), POINTER(c_int32)]
     mylib.osvrClientGetDisplayDimensions.restype = c_int8
-    returnvalue = mylib.osvrClientGetDisplayDimensions(disp, displayInputIndex, width, height)
+    dimensions = OSVR_DIsplayDimensions()
+    returnvalue = mylib.osvrClientGetDisplayDimensions(disp, c_uint8(displayInputIndex), pointer(dimensions.width), pointer(dimensions.height))
     checkReturn(returnvalue, 'osvrClientGetDisplayDimensions')
-    return returnvalue
+    return dimensions
 
-def osvrClientGetNumViewers(disp, viewers):
+def osvrClientGetNumViewers(disp):
     mylib.osvrClientGetNumViewers.argtypes = [OSVR_DisplayConfig, POINTER(c_uint32)]
     mylib.osvrClientGetNumViewers.restype = c_int8
-    returnvalue = mylib.osvrClientGetNumViewers(disp, viewers)
+    viewers = c_uint32()
+    returnvalue = mylib.osvrClientGetNumViewers(disp, pointer(viewers))
     checkReturn(returnvalue, 'osvrClientGetNumViewers')
-    return returnvalue
+    return viewers
 
-def osvrClientGetViewerPose(disp, viewer, pose):
+def osvrClientGetViewerPose(disp, viewer):
     mylib.osvrClientGetViewerPose.argtypes = [OSVR_DisplayConfig, c_uint32, POINTER(OSVR_Pose3)]
     mylib.osvrClientGetViewerPose.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerPose(disp, viewer, pose)
+    pose = OSVR_Pose3()
+    returnvalue = mylib.osvrClientGetViewerPose(disp, c_uint32(viewer), pointer(pose))
     checkReturn(returnvalue, 'osvrClientGetViewerPose')
-    return returnvalue
+    return pose
 
-def osvrClientGetNumEyesForViewer(disp, viewer, eyes):
+def osvrClientGetNumEyesForViewer(disp, viewer):
     mylib.osvrClientGetNumEyesForViewer.argtypes = [OSVR_DisplayConfig, c_uint32, POINTER(c_uint8)]
     mylib.osvrClientGetNumEyesForViewer.restype = c_int8
-    returnvalue = mylib.osvrClientGetNumEyesForViewer(disp, viewer, eyes)
+    eyes = c_uint8()
+    returnvalue = mylib.osvrClientGetNumEyesForViewer(disp, c_uint32(viewer), pointer(eyes))
     checkReturn(returnvalue, 'osvrClientGetNumEyesForViewer')
-    return returnvalue
+    return eyes
 
-def osvrClientGetViewerEyePose(disp, viewer, eye, pose):
+def osvrClientGetViewerEyePose(disp, viewer, eye):
     mylib.osvrClientGetViewerEyePose.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, POINTER(OSVR_Pose3)]
     mylib.osvrClientGetViewerEyePose.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerPose(disp, viewer, eye, pose)
+    pose = OSVR_Pose3()
+    returnvalue = mylib.osvrClientGetViewerPose(disp, c_uint32(viewer), c_uint8(eye), pointer(pose))
     checkReturn(returnvalue, 'osvrClientGetViewerEyePose')
-    return returnvalue
+    return pose
 
-def osvrClientGetViewerEyeViewMatrixd(disp, viewer, eye, flags, mat):
+def osvrClientGetViewerEyeViewMatrixd(disp, viewer, eye, flags):
     mylib.osvrClientGetViewerEyeViewMatrixd.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, c_uint16, POINTER(c_double)]
     mylib.osvrClientGetViewerEyeViewMatrixd.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerEyeViewMatrixd(disp, viewer, eye, flags, mat)
+    mat = c_double()
+    returnvalue = mylib.osvrClientGetViewerEyeViewMatrixd(disp, c_uint32(viewer), c_uint8(eye), c_uint16(flags), pointer(mat))
     checkReturn(returnvalue, 'osvrClientGetViewerEyeViewMatrixd')
-    return returnvalue
+    return mat
 
-def osvrClientGetViewerEyeViewMatrixf(disp, viewer, eye, flags, mat):
+def osvrClientGetViewerEyeViewMatrixf(disp, viewer, eye, flags):
     mylib.osvrClientGetViewerEyeViewMatrixf.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, c_uint16, POINTER(c_float)]
     mylib.osvrClientGetViewerEyeViewMatrixf.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerEyeViewMatrixd(disp, viewer, eye, flags, mat)
+    mat = c_float()
+    returnvalue = mylib.osvrClientGetViewerEyeViewMatrixd(disp, c_uint32(viewer), c_uint8(eye), c_uint16(flags), pointer(mat))
     checkReturn(returnvalue, 'osvrClientGetViewerEyeViewMatrixf')
-    return returnvalue
+    return mat
 
-def osvrClientGetNumSurfacesForViewerEye(disp, viewer, eye, surfaces):
+def osvrClientGetNumSurfacesForViewerEye(disp, viewer, eye):
     mylib.osvrClientGetNumSurfacesForViewerEye.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, POINTER(c_uint32)]
     mylib.osvrClientGetNumSurfacesForViewerEye.restype = c_int8
-    returnvalue = mylib.osvrClientGetNumSurfacesForViewerEye(disp, viewer, eye, surfaces)
+    surfaces = c_uint32()
+    returnvalue = mylib.osvrClientGetNumSurfacesForViewerEye(disp, c_uint32(viewer), c_uint8(eye), pointer(surfaces))
     checkReturn(returnvalue, 'osvrClientGetNumSurfacesForViewerEye')
-    return returnvalue
+    return surfaces
 
-def osvrClientGetRelativeViewportForViewerEyeSurface(disp, viewer, eye, surface, left, bottom, width, height):
+def osvrClientGetRelativeViewportForViewerEyeSurface(disp, viewer, eye, surface):
     mylib.osvrClientGetRelativeViewportForViewerEyeSurface.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, c_uint32, POINTER(c_int32), POINTER(c_int32), POINTER(c_int32), POINTER(c_int32)]
     mylib.osvrClientGetRelativeViewportForViewerEyeSurface.restype = c_int8
-    returnvalue = mylib.osvrClientGetRelativeViewportForViewerEyeSurface(disp, viewer, eye, surface, left, bottom, width, height)
+    viewport = OSVR_RelativeViewport()
+    returnvalue = mylib.osvrClientGetRelativeViewportForViewerEyeSurface(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), pointer(viewport.left), pointer(viewport.bottom), pointer(viewport.width), pointer(viewport.height))
     checkReturn(returnvalue, 'osvrClientGetRelativeViewportForViewerEyeSurface')
-    return returnvalue
+    return viewport
 
-def osvrClientGetViewerEyeSurfaceDisplayInputIndex(disp, viewer, eye, surface, displayInput):
+def osvrClientGetViewerEyeSurfaceDisplayInputIndex(disp, viewer, eye, surface):
     mylib.osvrClientGetViewerEyeSurfaceDisplayInputIndex.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, c_uint32, POINTER(c_uint8)]
     mylib.osvrClientGetViewerEyeSurfaceDisplayInputIndex.restype = c_int8
-    returnvalue = osvrClientGetViewerEyeSurfaceDisplayInputIndex(disp, viewer, eye, surface, displayInput)
+    displayInput = c_uint8()
+    returnvalue = osvrClientGetViewerEyeSurfaceDisplayInputIndex(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), pointer(displayInput))
     checkReturn(returnvalue, 'osvrClientGetRelativeViewportEyeSurfaceDisplayInputIndex')
-    return returnvalue
+    return displayInput
 
-def osvrClientGetViewerEyeSurfaceProjectionMatrixd(disp, viewer, eye, surface, near, far, flags, matrix):
+def osvrClientGetViewerEyeSurfaceProjectionMatrixd(disp, viewer, eye, surface, near, far, flags):
     mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixd.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, c_uint32, c_double, c_double, c_uint16, POINTER(c_double)]
     mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixd.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixd(disp, viewer, eye, surface, near, far, flags, matrix)
+    matrix = c_double()
+    returnvalue = mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixd(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), c_double(near), c_double(far), c_uint16(flags), pointer(matrix))
     checkReturn(returnvalue, 'osvrClientGetViewerEyeSurfaceProjectionMatrixd')
-    return returnvalue
+    return matrix
 
-def osvrClientGetViewerEyeSurfaceProjectionMatrixf(disp, viewer, eye, surface, near, far, flags, matrix):
+def osvrClientGetViewerEyeSurfaceProjectionMatrixf(disp, viewer, eye, surface, near, far, flags):
     mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixf.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, c_uint32, c_double, c_double, c_uint16, POINTER(c_float)]
     mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixf.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixf(disp, viewer, eye, surface, near, far, flags, matrix)
+    matrix = c_float()
+    returnvalue = mylib.osvrClientGetViewerEyeSurfaceProjectionMatrixf(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), c_double(near), c_double(far), c_uint16(flags), pointer(matrix))
     checkReturn(returnvalue, 'osvrClientGetViewerEyeSurfaceProjectionMatrixf')
-    return returnvalue
+    return matrix
 
-def osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(disp, viewer, eye, surface, left, right, bottom, top):
+def osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(disp, viewer, eye, surface):
     mylib.osvrClientGetViewerEyeSurfaceProjectionClippingPlanes.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint32, POINTER(c_double), POINTER(c_double), POINTER(c_double), POINTER(c_double)]
     mylib.osvrClientGetViewerEyeSurfaceProjectionClippingPlanes.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(disp, viewer, eye, surface, left, right, bottom, top)
+    planes = OSVR_ClippingPlanes()
+    returnvalue = mylib.osvrClientGetViewerEyeSurfaceProjectionClippingPlanes(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), pointer(planes.left), pointer(planes.right), pointer(planes.bottom), pointer(planes.top))
     checkReturn(returnvalue, 'osvrClientGetViewerEyeSurfaceProjectionClippingPlanes')
-    return returnvalue
+    return planes
 
-def osvrClientDoesViewerEyeSurfaceWantDistortion(disp, viewer, eye, surface, distortionRequested):
-    mylib.osvrClientDoesViewerEyeSurfaceWantDistortion.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint32, POINTER(c_uint8_t)]
+def osvrClientDoesViewerEyeSurfaceWantDistortion(disp, viewer, eye, surface):
+    mylib.osvrClientDoesViewerEyeSurfaceWantDistortion.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint32, POINTER(c_uint8)]
     mylib.osvrClientDoesViewerEyeSurfaceWantDistortion.restype = c_int8
-    returnvalue = mylib.osvrClientDoesViewerEyeSurfaceWantDistortion(disp, viewer, eye, surface, distortionRequested)
+    request = c_uint8()
+    returnvalue = mylib.osvrClientDoesViewerEyeSurfaceWantDistortion(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), pointer(request))
     checkReturn(returnvalue, 'osvrClientDoesViewerEyeSurfaceWantDistortion')
-    return returnvalue
+    return request
 
-def osvrClientGetViewerEyeSurfaceRadialDistortionPriority(disp, viewer, eye, surface, priority):
-    mylib.osvrClientGetViewerEyeSurfaceRadialDistortionPriority.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint32, POINTER(c_int32_t)]
+def osvrClientGetViewerEyeSurfaceRadialDistortionPriority(disp, viewer, eye, surface):
+    mylib.osvrClientGetViewerEyeSurfaceRadialDistortionPriority.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint32, POINTER(c_int32)]
     mylib.osvrClientGetViewerEyeSurfaceRadialDistortionPriority.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerEyeSurfaceRadialDistortionPriority(disp, viewer, eye, surface, priority)
+    priority = c_int32()
+    returnvalue = mylib.osvrClientGetViewerEyeSurfaceRadialDistortionPriority(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), pointer(priority))
     checkReturn(returnvalue, 'osvrClientGetViewerEyeSurfaceRadialDistortionPriority')
-    return returnvalue
+    return priority
 
-def osvrClientGetViewerEyeSurfaceRadialDistortion(disp, viewer, eye, surface, params):
+def osvrClientGetViewerEyeSurfaceRadialDistortion(disp, viewer, eye, surface):
     mylib.osvrClientGetViewerEyeSurfaceRadialDistortion.argtypes = [OSVR_DisplayConfig, c_uint32, c_uint8, c_uint32, POINTER(OSVR_RadialDistortionParameters)]
     mylib.osvrClientGetViewerEyeSurfaceRadialDistortion.restype = c_int8
-    returnvalue = mylib.osvrClientGetViewerEyeSurfaceRadialDistortion(disp, viewer, eye, surface, params)
+    params = OSVR_RadialDistortionParameters()
+    returnvalue = mylib.osvrClientGetViewerEyeSurfaceRadialDistortion(disp, c_uint32(viewer), c_uint8(eye), c_uint32(surface), pointer(params))
     checkReturn(returnvalue, 'osvrClientGetViewerEyeSurfaceRadialDistortion')
-    return returnvalue
+    return params
 
 # ImagingC.h functions
 # These don't seem to be included in the doxygen docs
 
-# c_ubyte is the ctypes type for unsigned char
 def osvrClientFreeImage(ctx, buf):
     mylib.osvrClientFreeImage.argtypes = [OSVR_ClientContext, POINTER(c_ubyte)]
     mylib.osvrClientFreeImage.restype = c_int8
@@ -253,104 +326,158 @@ def osvrClientFreeInterface(ctx, iface):
     checkReturn(returnvalue, 'osvrClientFreeInterface')
     return
 
-# InterfaceStateC.h functions
-#Probably need to return state and timestamp, probably make a structure for that
+# InterfaceCallbackC.h functions
 
-def osvrGetPoseState(iface, timestamp):
+def osvrRegisterPoseCallback(iface, cb, userdata):
+    mylib.osvrRegisterPoseCallback.argtypes = [OSVR_ClientInterface, OSVR_PoseCallback, c_void_p]
+    mylib.osvrRegisterPoseCallback.restype = c_int8
+    
+def osvrRegisterPositionCallback(iface, cb, userdata):
+    mylib.osvrRegisterPositionCallback.argtypes = [OSVR_ClientInterface, OSVR_PositionCallback, c_void_p]
+    mylib.osvrRegisterPositionCallback.restype = c_int8
+
+def osvrRegisterOrientationCallback(iface, cb, userdata):
+    mylib.osvrRegisterOrientationCallback.argtypes = [OSVR_ClientInterface, OSVR_OrientationCallback, c_void_p]
+    mylib.osvrRegisterOrientationCallback.restype = c_int8
+
+def osvrRegisterButtonCallback(iface, cb, userdata):
+    mylib.osvrRegisterButtonCallback.argtypes = [OSVR_ClientInterface, OSVR_ButtonCallback, c_void_p]
+    mylib.osvrRegisterButtonCallback.restype = c_int8
+
+def osvrRegisterAnalogCallback(iface, cb, userdata):
+    mylib.osvrRegisterAnalogCallback.argtypes = [OSVR_ClientInterface, OSVR_AnalogCallback, c_void_p]
+    mylib.osvrRegisterAnalogCallback.restype = c_int8
+
+def osvrRegisterImagingCallback(iface, cb, userdata):
+    mylib.osvrRegisterImagingCallback.argtypes = [OSVR_ClientInterface, OSVR_ImagingCallback, c_void_p]
+    mylib.osvrRegisterImagingCallback.restype = c_int8
+
+def osvrRegisterLocation2DCallback(iface, cb, userdata):
+    mylib.osvrRegisterLocation2DCallback.argtypes = [OSVR_ClientInterface, OSVR_Location2DCallback, c_void_p]
+    mylib.osvrRegisterLocation2DCallback.restype = c_int8
+
+def osvrRegisterDirectionCallback(iface, cb, userdata):
+    mylib.osvrRegisterDirectionCallback.argtypes = [OSVR_ClientInterface, OSVR_DirectionCallback, c_void_p]
+    mylib.osvrRegisterDirectionCallback.restype = c_int8
+
+def osvrRegisterEyeTracker2DCallback(iface, cb, userdata):
+    mylib.osvrRegisterEyeTracker2DCallback.argtypes = [OSVR_ClientInterface, OSVR_EyeTracker2DCallback, c_void_p]
+    mylib.osvrRegisterEyeTracker2DCallback.restype = c_int8
+
+def osvrRegisterEyeTracker3DCallback(iface, cb, userdata):
+    mylib.osvrRegisterEyeTracker3DCallback.argtypes = [OSVR_ClientInterface, OSVR_EyeTracker3DCallback, c_void_p]
+    mylib.osvrRegisterEyeTracker3DCallback.restype = c_int8
+
+def osvrRegisterEyeTrackerBlinkCallback(iface, cb, userdata):
+    mylib.osvrRegisterEyeTrackerBlinkCallback.argtypes = [OSVR_ClientInterface, OSVR_EyeTrackerBlinkCallback, c_void_p]
+    mylib.osvrRegisterEyeTrackerBlinkCallback.restype = c_int8
+
+def osvrRegisterNaviVelocityCallback(iface, cb, userdata):
+    mylib.osvrRegisterNaviVelocityCallback.argtypes = [OSVR_ClientInterface, OSVR_NaviVelocityCallback, c_void_p]
+    mylib.osvrRegisterNaviVelocityCallback.restype = c_int8
+
+def osvrRegisterNaviPositionCallback(iface, cb, userdata):
+    mylib.osvrRegisterNaviPositionCallback.argtypes = [OSVR_ClientInterface, OSVR_NaviPositionCallback, c_void_p]
+    mylib.osvrRegisterNaviPositionCallback.restype = c_int8
+    
+
+# InterfaceStateC.h functions
+
+def osvrGetPoseState(iface):
     mylib.osvrGetPoseState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Pose3)]
     mylib.osvrGetPoseState.restype = c_int8
-    state = OSVR_Pose3()
-    returnvalue = mylib.osvrGetPoseState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedPoseState()
+    returnvalue = mylib.osvrGetPoseState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetPoseState')
-    return state
+    return t_state
 
-def osvrGetPositionState(iface, timestamp):
+def osvrGetPositionState(iface):
     mylib.osvrGetPositionState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Vec3)]
     mylib.osvrGetPositionState.restype = c_int8
-    state = OSVR_Vec3()
-    returnvalue = mylib.osvrGetPositionState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedPositionState()
+    returnvalue = mylib.osvrGetPositionState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetPositionState')
-    return state
+    return t_state
 
-def osvrGetOrientationState(iface, timestamp):
+def osvrGetOrientationState(iface):
     mylib.osvrGetOrientationState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Quaternion)]
     mylib.osvrGetOrientationState.restype = c_int8
-    state = OSVR_Quaternion()
-    returnvalue = mylib.osvrGetOrientationState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedOrientationState()
+    returnvalue = mylib.osvrGetOrientationState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetOrientationState')
-    return state
+    return t_state
 
-def osvrGetButtonState(iface, timestamp):
+def osvrGetButtonState(iface):
     mylib.osvrGetButtonState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(c_uint8)]
     mylib.osvrGetButtonState.restype = c_int8
-    state = c_uint8()
-    returnvalue = mylib.osvrGetButtonState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedButtonState()
+    returnvalue = mylib.osvrGetButtonState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetButtonState')
-    return state
+    return t_state
 
-def osvrGetAnalogState(iface, timestamp):
+def osvrGetAnalogState(iface):
     mylib.osvrGetAnalogState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(c_double)]
     mylib.osvrGetAnalogState.restype = c_int8
-    state = c_double()
-    returnvalue = mylib.osvrGetAnalogState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedAnalogState()
+    returnvalue = mylib.osvrGetAnalogState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetAnalogState')
-    return state
+    return t_state
 
-def osvrGetLocation2DState(iface, timestamp):
+def osvrGetLocation2DState(iface):
     mylib.osvrGetLocation2DState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Vec2)]
     mylib.osvrGetLocation2DState.restype = c_int8
-    state = OSVR_Vec2()
-    returnvalue = mylib.osvrGetLocation2DState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedLocation2DState()
+    returnvalue = mylib.osvrGetLocation2DState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetLocation2DState')
-    return state
+    return t_state
 
-def osvrGetDirectionState(iface, timestamp):
+def osvrGetDirectionState(iface):
     mylib.osvrGetDirectionState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Vec3)]
     mylib.osvrGetDirectionState.restype = c_int8
-    state = OSVR_Vec3()
-    returnvalue = mylib.osvrGetDirectionState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedDirectionState()
+    returnvalue = mylib.osvrGetDirectionState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetDirectionState')
-    return state
+    return t_state
 
-def osvrGetEyeTracker2DState(iface, timestamp):
+def osvrGetEyeTracker2DState(iface):
     mylib.osvrGetEyeTracker2DState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Vec2)]
     mylib.osvrGetEyeTracker2DState.restype = c_int8
-    state = OSVR_Vec2()
-    returnvalue = mylib.osvrGetEyeTracker2DState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedEyeTracker2DState()
+    returnvalue = mylib.osvrGetEyeTracker2DState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetEyeTracker2DState')
-    return state
+    return t_state
 
-def osvrGetEyeTracker3DState(iface, timestamp):
+def osvrGetEyeTracker3DState(iface):
     mylib.osvrGetEyeTracker3DState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_EyeTracker3DState)]
     mylib.osvrGetEyeTracker3DState.restype = c_int8
-    state = OSVR_EyeTracker3DState()
-    returnvalue = mylib.osvrGetEyeTracker3DState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedEyeTracker3DState()
+    returnvalue = mylib.osvrGetEyeTracker3DState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetEyeTracker3DState')
-    return state
+    return t_state
 
-def osvrGetEyeTrackerBlinkState(iface, timestamp):
+def osvrGetEyeTrackerBlinkState(iface):
     mylib.osvrGetEyeTrackerBlinkState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(c_uint8)]
     mylib.osvrGetEyeTrackerBlinkState.restype = c_int8
-    state = c_uint8()
-    returnvalue = mylib.osvrGetEyeTrackerBlinkState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedEyeTrackerBlinkState()
+    returnvalue = mylib.osvrGetEyeTrackerBlinkState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetEyeTrackerBlinkState')
-    return state
+    return t_state
 
-def osvrGetNaviVelocityState(iface, timestamp):
+def osvrGetNaviVelocityState(iface):
     mylib.osvrGetNaviVelocityState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Vec2)]
     mylib.osvrGetNaviVelocityState.restype = c_int8
-    state = OSVR_Vec2()
-    returnvalue = mylib.osvrGetNaviVelocityState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedNaviVelocityState()
+    returnvalue = mylib.osvrGetNaviVelocityState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetNaviVelocityState')
-    return state
+    return t_state
 
-def osvrGetNaviPositionState(iface, timestamp):
+def osvrGetNaviPositionState(iface):
     mylib.osvrGetNaviPositionState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Vec2)]
     mylib.osvrGetNaviPositionState.restype = c_int8
-    state = OSVR_Vec2()
-    returnvalue = mylib.osvrGetNaviPositionState(iface, timestamp, pointer(state))
+    t_state = OSVR_TimestampedNaviPositionState()
+    returnvalue = mylib.osvrGetNaviPositionState(iface, pointer(t_state.timestamp), pointer(t_state.state))
     checkReturn(returnvalue, 'osvrGetNaviPositionState')
-    return state
+    return t_state
 
 
 # ParametersC.h functions

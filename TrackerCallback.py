@@ -1,5 +1,5 @@
 from ctypes import *
-from ffi import *
+from osvrClientKit import *
 
 ctx = osvrClientInit("com.osvr.exampleclients.TrackerCallback")
 
