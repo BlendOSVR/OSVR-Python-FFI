@@ -1,4 +1,3 @@
-from ctypes import *
 from osvrClientKit import *
 
 def myTrackerCallback(userdata, timestamp, report):

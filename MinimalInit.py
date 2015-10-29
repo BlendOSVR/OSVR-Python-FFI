@@ -1,4 +1,3 @@
-from ctypes import * 
 from osvrClientKit import *
 
 ctx = osvrClientInit("com.osvr.exampleclients.MinimalInit")

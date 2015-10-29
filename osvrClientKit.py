@@ -186,7 +186,7 @@ class ReturnError(Exception):
         return repr(self.function)
 
 def checkReturn(returnvalue, function):
-    if returnvalue == c_int8(1):
+    if returnvalue == 1:
         raise ReturnError(returnvalue, function)
 
 # ContextC.h functions
