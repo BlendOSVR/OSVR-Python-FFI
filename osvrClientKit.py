@@ -46,18 +46,97 @@ class OSVR_RelativeViewport(Structure):
 class OSVR_ClippingPlanes(Structure):
     _fields_ = [("left", c_double), ("right", c_double), ("bottom", c_double), ("top", c_double)]
 
-# InterfaceCallbackC.h data types
-
-class OSVR_PositionReport(Structure):
-    
-
-OSVR_PoseCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_PositionReport))
-
-# InterfaceStateC.h data types
-
 class OSVR_EyeTracker3DState(Structure):
     _fields_ = [("direction", OSVR_Vec3), ("basePoint", OSVR_Vec3)]
 
+# InterfaceCallbackC.h data types
+
+class OSVR_PoseReport(Structure):
+    _fields_ = [("sensor", c_int32), ("pose", OSVR_Pose3)]
+
+class OSVR_PositionReport(Structure):
+    _fields_ = [("sensor", c_int32), ("xyz", OSVR_Vec3)]
+
+class OSVR_OrientationReport(Structure):
+    _fields_ = [("sensor", c_int32), ("rotation", OSVR_Quaternion)]
+
+class OSVR_ButtonReport(Structure):
+    _fields_ = [("sensor", c_int32), ("state", c_uint8)]
+
+class OSVR_AnalogReport(Structure):
+    _fields_ = [("sensor", c_int32), ("state", c_double)]
+
+#This does not seem to exist in the C file, probably mention this to Ryan
+#class OSVR_ImagingReport(Structure):
+#    _fields_ = [(), ()]
+
+
+class OSVR_Location2DReport(Structure):
+    _fields_ = [("sensor", c_uint32), ("location", OSVR_Vec2)]
+
+class OSVR_DirectionReport(Structure):
+    _fields_ = [("sensor", c_uint32), ("direction", OSVR_Vec3)]
+
+
+#using cbool for now, may need to change depending on what exactly bool is in the C code, probably gonna be OSVR_CBool
+class OSVR_EyeTracker2DReport(Structure):
+    _fields_ = [("locationValid", c_bool), ("sensor", c_uint32), ("state", OSVR_Vec2)]
+
+class OSVR_EyeTracker3DReport(Structure):
+    _fields_ = [("directioinValid", c_bool), ("basePointValid", c_bool), ("sensor", c_uint32), ("state", OSVR_EyeTracker3DState)]
+
+class OSVR_EyeTrackerBlinkReport(Structure):
+    _fields_ = [("blinkValid", c_bool), ("sensor", c_uint32), ("state", c_uint8)]
+
+class OSVR_NaviVelocityReport(Structure):
+    _fields_ = [("sensor", c_uint32), ("state", OSVR_Vec2)]
+
+class OSVR_NaviPositionReport(Structure):
+    _fields_ = [("sensor", c_uint32), ("state", OSVR_Vec2)]
+
+
+#IMPORTANT: To create a TYPECallback function pointer to pass to OSVR_RegisterTYPECallback, you must make a python function to be called
+#   and then pass it to OSVR_TYPECallback, i.e.
+#
+#def my_pose_callback_function(c_void_p variable, POINTER(OSVR_TimeValue) variable, POINTER(OSVR_PoseReport) variable):
+#   .....
+#
+#interface = OSVR_ClientGetInterface(...)
+#
+#callback = OSVR_PoseCallback(my_pose_callback_function)
+#
+#osvrRegisterPoseCallback(interface, callback, None)
+
+
+OSVR_PoseCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_PoseReport))
+
+OSVR_PositionCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_PositionReport))
+
+OSVR_OrientationCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_OrientationReport))
+
+OSVR_ButtonCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_ButtonReport))
+
+OSVR_AnalogCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_AnalogReport))
+
+#Commented out because the OSVR_ImagingReport type is not defined in C
+#OSVR_ImagingCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_ImagingReport))
+
+OSVR_Location2DCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_Location2DReport))
+
+OSVR_DirectionCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_DirectionReport))
+
+OSVR_EyeTracker2DCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_EyeTracker2DReport))
+
+OSVR_EyeTracker3DCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_EyeTracker3DReport))
+
+OSVR_EyeTrackerBlinkCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_EyeTrackerBlinkReport))
+
+OSVR_NaviVelocityCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_NaviVelocityReport))
+
+OSVR_NaviPositionCallback = CFUNCTYPE(None, c_void_p, POINTER(OSVR_TimeValue), POINTER(OSVR_NaviPositionReport))
+
+
+#These were created so the getState functions could return a state and a timestamp
 class OSVR_TimestampedPoseState(Structure):
     _fields_ = [("timestamp", OSVR_TimeValue), ("state", OSVR_Pose3)]
 
@@ -96,6 +175,7 @@ class OSVR_TimestampedNaviPositionState(Structure):
 
 
 
+
 # Error checking
 
 class ReturnError(Exception):
@@ -105,9 +185,9 @@ class ReturnError(Exception):
     def __str__(self):
         return repr(self.function)
 
-def checkReturn(returnValue, function):
-    if returnValue == c_int8(1):
-        raise ReturnError(returnValue, function)
+def checkReturn(returnvalue, function):
+    if returnvalue == c_int8(1):
+        raise ReturnError(returnvalue, function)
 
 # ContextC.h functions
 
@@ -331,55 +411,94 @@ def osvrClientFreeInterface(ctx, iface):
 def osvrRegisterPoseCallback(iface, cb, userdata):
     mylib.osvrRegisterPoseCallback.argtypes = [OSVR_ClientInterface, OSVR_PoseCallback, c_void_p]
     mylib.osvrRegisterPoseCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterPoseCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterPoseCallback')
+    return
     
 def osvrRegisterPositionCallback(iface, cb, userdata):
     mylib.osvrRegisterPositionCallback.argtypes = [OSVR_ClientInterface, OSVR_PositionCallback, c_void_p]
     mylib.osvrRegisterPositionCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterPositionCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterPositionCallback')
+    return
 
 def osvrRegisterOrientationCallback(iface, cb, userdata):
     mylib.osvrRegisterOrientationCallback.argtypes = [OSVR_ClientInterface, OSVR_OrientationCallback, c_void_p]
     mylib.osvrRegisterOrientationCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterOrientationCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterOrientationCallback')
+    return
 
 def osvrRegisterButtonCallback(iface, cb, userdata):
     mylib.osvrRegisterButtonCallback.argtypes = [OSVR_ClientInterface, OSVR_ButtonCallback, c_void_p]
     mylib.osvrRegisterButtonCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterButtonCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterButtonCallback')
+    return
 
 def osvrRegisterAnalogCallback(iface, cb, userdata):
     mylib.osvrRegisterAnalogCallback.argtypes = [OSVR_ClientInterface, OSVR_AnalogCallback, c_void_p]
     mylib.osvrRegisterAnalogCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterAnalogCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterAnalogCallback')
+    return
 
-def osvrRegisterImagingCallback(iface, cb, userdata):
-    mylib.osvrRegisterImagingCallback.argtypes = [OSVR_ClientInterface, OSVR_ImagingCallback, c_void_p]
-    mylib.osvrRegisterImagingCallback.restype = c_int8
+#Commented out because ImagingReport is not defined
+#def osvrRegisterImagingCallback(iface, cb, userdata):
+#    mylib.osvrRegisterImagingCallback.argtypes = [OSVR_ClientInterface, OSVR_ImagingCallback, c_void_p]
+#    mylib.osvrRegisterImagingCallback.restype = c_int8
+#    returnvalue = mylib.osvrRegisterImagingCallback(iface, cb, c_void_p(userdata))
+#    checkReturn(returnvalue, 'osvrRegisterImagingCallback')
+#    return
 
 def osvrRegisterLocation2DCallback(iface, cb, userdata):
     mylib.osvrRegisterLocation2DCallback.argtypes = [OSVR_ClientInterface, OSVR_Location2DCallback, c_void_p]
     mylib.osvrRegisterLocation2DCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterLocation2DCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterLocation2DCallback')
+    return
 
 def osvrRegisterDirectionCallback(iface, cb, userdata):
     mylib.osvrRegisterDirectionCallback.argtypes = [OSVR_ClientInterface, OSVR_DirectionCallback, c_void_p]
     mylib.osvrRegisterDirectionCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterDirectionCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterDirectionCallback')
+    return
 
 def osvrRegisterEyeTracker2DCallback(iface, cb, userdata):
     mylib.osvrRegisterEyeTracker2DCallback.argtypes = [OSVR_ClientInterface, OSVR_EyeTracker2DCallback, c_void_p]
     mylib.osvrRegisterEyeTracker2DCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterEyeTracker2DCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterEyeTracker2DCallback')
+    return
 
 def osvrRegisterEyeTracker3DCallback(iface, cb, userdata):
     mylib.osvrRegisterEyeTracker3DCallback.argtypes = [OSVR_ClientInterface, OSVR_EyeTracker3DCallback, c_void_p]
     mylib.osvrRegisterEyeTracker3DCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterEyeTracker3DCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterEyeTracker3DCallback')
+    return
 
 def osvrRegisterEyeTrackerBlinkCallback(iface, cb, userdata):
     mylib.osvrRegisterEyeTrackerBlinkCallback.argtypes = [OSVR_ClientInterface, OSVR_EyeTrackerBlinkCallback, c_void_p]
     mylib.osvrRegisterEyeTrackerBlinkCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterEyeTrackerBlinkCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterEyeTrackerBlinkCallback')
+    return
 
 def osvrRegisterNaviVelocityCallback(iface, cb, userdata):
     mylib.osvrRegisterNaviVelocityCallback.argtypes = [OSVR_ClientInterface, OSVR_NaviVelocityCallback, c_void_p]
     mylib.osvrRegisterNaviVelocityCallback.restype = c_int8
+    returnvalue = mylib.osvrRegisterNaviVelocityCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterNaviVelocityCallback')
+    return
 
 def osvrRegisterNaviPositionCallback(iface, cb, userdata):
     mylib.osvrRegisterNaviPositionCallback.argtypes = [OSVR_ClientInterface, OSVR_NaviPositionCallback, c_void_p]
     mylib.osvrRegisterNaviPositionCallback.restype = c_int8
-    
+    returnvalue = mylib.osvrRegisterNaviPositionCallback(iface, cb, c_void_p(userdata))
+    checkReturn(returnvalue, 'osvrRegisterNaviPositionCallback')
+    return
 
 # InterfaceStateC.h functions
 
