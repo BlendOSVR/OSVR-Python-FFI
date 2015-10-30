@@ -602,17 +602,17 @@ def osvrGetNaviPositionState(iface):
 # ParametersC.h functions
 
 def osvrClientGetStringParameterLength(ctx, path):
-    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, c_size_t]
+    mylib.osvrClientGetStringParameterLength.argtypes = [OSVR_ClientContext, c_char_p, POINTER(c_size_t)]
     mylib.osvrClientGetStringParameterLength.restype = c_int8
     length = c_size_t()
-    returnvalue = mylib.osvrGetStringParameterLength(ctx, c_char_p(path.encode("uft8")), pointer(length))
+    returnvalue = mylib.osvrClientGetStringParameterLength(ctx, c_char_p(path.encode("utf8")), pointer(length))
     checkReturn(returnvalue, 'osvrClientGetStringParameterLength')
     return length
 
 def osvrClientGetStringParameter(ctx, path, len):
-    mylib.osvrClientGetStringParameter.argtypes = [OSVR_ClientContext, c_char_p, c_char_p, c_size_t]
+    mylib.osvrClientGetStringParameter.argtypes = [OSVR_ClientContext, POINTER(c_char), c_char_p, c_size_t]
     mylib.osvrClientGetStringParameter.restype = c_int8
-    buf = create_string_buffer(len)
-    returnvalue = mylib.osvrClientGetStringParameter(ctx, c_char_p(path.encode("utf8")), c_char_p(buf), c_size_t(len))
+    buf = create_string_buffer(100)
+    returnvalue = mylib.osvrClientGetStringParameter(ctx, c_char_p(path.encode("utf8")), buf, c_size_t(len))
     checkReturn(returnvalue, 'osvrClientGetStringParameter')
     return buf
