@@ -507,8 +507,8 @@ def osvrGetPoseState(iface):
     mylib.osvrGetPoseState.restype = c_int8
     t_state = OSVR_TimestampedPoseState()
     returnvalue = mylib.osvrGetPoseState(iface, pointer(t_state.timestamp), pointer(t_state.state))
-    checkReturn(returnvalue, 'osvrGetPoseState')
-    return t_state
+    #checkReturn(returnvalue, 'osvrGetPoseState')
+    return (returnvalue, t_state)
 
 def osvrGetPositionState(iface):
     mylib.osvrGetPositionState.argtypes = [OSVR_ClientInterface, POINTER(OSVR_TimeValue), POINTER(OSVR_Vec3)]
