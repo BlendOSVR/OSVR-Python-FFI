@@ -8,7 +8,7 @@ length = osvrClientGetStringParameterLength(ctx, path)
 
 displayDescription = osvrClientGetStringParameter(ctx, path, length)
 
-print("Got value of %s: \n%s\n" % (path, displayDescription))
+print("Got value of %s: \n%s" % (path, displayDescription))
 
 osvrClientShutdown(ctx)
-print("Library shut down, exiting.\n")
+print("Library shut down, exiting.")

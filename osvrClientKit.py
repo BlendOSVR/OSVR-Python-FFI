@@ -221,12 +221,12 @@ def osvrClientShutdown(ctx):
 # DisplayC.h functions
 
 def osvrClientGetDisplay(ctx):
-    mylib.osvrClientGetDisplay.argtypes = [OSVR_ClientContext, POINTER(OSVR_DisplayConfigObject)]
+    mylib.osvrClientGetDisplay.argtypes = [OSVR_ClientContext, POINTER(OSVR_DisplayConfig)]
     mylib.osvrClientGetDisplay.restype = c_int8
-    disp = OSVR_DisplayConfigObject()
+    disp = pointer(OSVR_DisplayConfigObject())
     returnvalue = mylib.osvrClientGetDisplay(ctx, pointer(disp))
-    checkReturn(returnvalue, 'osvrClientGetDisplay')
-    return disp
+    #checkReturn(returnvalue, 'osvrClientGetDisplay')
+    return disp, returnvalue
 
 def osvrClientFreeDisplay(disp):
     mylib.osvrClientFreeDisplay.argtypes = [OSVR_DisplayConfig]
@@ -612,7 +612,7 @@ def osvrClientGetStringParameterLength(ctx, path):
 def osvrClientGetStringParameter(ctx, path, len):
     mylib.osvrClientGetStringParameter.argtypes = [OSVR_ClientContext, POINTER(c_char), c_char_p, c_size_t]
     mylib.osvrClientGetStringParameter.restype = c_int8
-    buf = create_string_buffer(100)
-    returnvalue = mylib.osvrClientGetStringParameter(ctx, c_char_p(path.encode("utf8")), buf, c_size_t(len))
+    buf = create_string_buffer(len.value)
+    returnvalue = mylib.osvrClientGetStringParameter(ctx, c_char_p(path.encode("utf8")), buf, c_size_t(len.value))
     checkReturn(returnvalue, 'osvrClientGetStringParameter')
-    return buf
+    return buf.value.decode("utf8")
