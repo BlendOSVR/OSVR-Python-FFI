@@ -13,11 +13,17 @@ ctx = osvrClientInit("com.osvr.exampleclients.TrackerCallback")
 
 lefthand = osvrClientGetInterface(ctx, "/me/head")
 
-osvrRegisterPoseCallback(lefthand, OSVR_PoseCallback(myTrackerCallback), None)
+C_PoseCallback = OSVR_PoseCallback(myTrackerCallback)
 
-osvrRegisterOrientationCallback(lefthand, OSVR_OrientationCallback(myOrientationCallback), None)
+C_OrientationCallback = OSVR_OrientationCallback(myOrientationCallback)
 
-osvrRegisterPositionCallback(lefthand, OSVR_PositionCallback(myPositionCallback), None)
+C_PositionCallback = OSVR_PositionCallback(myPositionCallback)
+
+osvrRegisterPoseCallback(lefthand, C_PoseCallback, None)
+
+osvrRegisterOrientationCallback(lefthand, C_OrientationCallback, None)
+
+osvrRegisterPositionCallback(lefthand, C_PositionCallback, None)
 
 for i in range (0, 10000):
     osvrClientUpdate(ctx)
