@@ -5,8 +5,11 @@ ctx = osvrClientInit("com.osvr.example.ViewerEyeSurfaces")
 while True:
     print("Trying to get the display config")
     osvrClientUpdate(ctx)
-    display, code = osvrClientGetDisplay(ctx)
-    if(code == 0):
+    try:
+        display = osvrClientGetDisplay(ctx)
+    except ReturnError:
+        continue
+    else:
         break
 
 viewers = osvrClientGetNumViewers(display)
