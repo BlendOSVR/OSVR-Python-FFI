@@ -1,10 +1,8 @@
-from ctypes import *
+from osvrClientKit import *
 
-mylib = cdll.LoadLibrary("osvrClientKit")
-
-ctx = mylib.osvrClientInit("com.osvr.exampleclients.MinimalInit", 0)
+ctx = osvrClientInit("com.osvr.exampleclients.MinimalInit")
 
 for i in range(0, 1000000):
-	mylib.osvrClientUpdate(ctx)
+    osvrClientUpdate(ctx)
 
-mylib.osvrClientShutdown(ctx)
+osvrClientShutdown(ctx)
